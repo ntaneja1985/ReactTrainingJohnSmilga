@@ -250,6 +250,184 @@ h1 {
 
 # In useState() if we generate a new state, then we trigger a re-render
 
+# Automatic Batching
+
+- In React, "batching" refers to the process of grouping multiple state updates into a single update. This can be useful in certain cases because it allows React to optimize the rendering of your components by minimizing the number of DOM updates that it has to perform.
+
+- By default, React uses a technique called "auto-batching" to group state updates that occur within the same event loop into a single update. This means that if you call the state update function multiple times in a short period of time, React will only perform a single re-render for all of the updates.
+
+- React 18 ensures that state updates invoked from any location will be batched by default. This will batch state updates, including native event handlers, asynchronous operations, timeouts, and intervals.
+  
+- Keep in mind that the state update function setState does not immediately mutate the state. 
+- Instead, it schedules an update to the state and tells React that it needs to re-render the component. The actual state update will be performed as part of the next rendering cycle.
+-  Be mindful when you need to set state value based on a different state value.
+  
+# useState hook
+
+## State doesnot update immediately after calling setFunction
+- Keep in mind that the state update function setState does not immediately mutate the state. Instead, it schedules an update to the state and tells React that it needs to re-render the component. The actual state update will be performed as part of the next rendering cycle.
+
+- If you want to update the state immediately and synchronously, you can pass a function to setState that receives the previous state as an argument and returns the new state. 
+ ### To update the state synchronously we can do it like this:
+
+ ```js
+const handleClick = () => {
+  setValue((currentState) => {
+    // must return otherwise undefined
+    // below is the latest/current state value
+    const newState = currentState + 1;
+    return newState;
+  });
+};
+
+ ```
+
+ **In Javascript functions by default return undefined**
+
+ # useEffect hook
+
+ - useEffect is a hook in React that allows you to perform side effects in function components.
+ - There is no need for urban dictionary - basically any work outside of the component. 
+ - Some examples of side effects are: subscriptions, fetching data, directly updating the DOM, event listeners, timers, etc.
+
+- useEffect hook
+- accepts two arguments (second optional)
+- first argument - cb function
+- second argument - dependency array
+- by default runs on each render (initial and re-render)
+- cb can't return promise (so can't make it async)
+- if dependency array empty [] runs only on initial render
+
+## Inside the useEffect we need to cleanup components also
+
+```js
+import { useEffect, useState } from 'react';
+
+const CleanupFunction = () => {
+  const [toggle, setToggle] = useState(false);
+  return (
+    <div>
+      <button className='btn' onClick={() => setToggle(!toggle)}>
+        toggle component
+      </button>
+      {toggle && <RandomComponent />}
+    </div>
+  );
+};
+const RandomComponent = () => {
+  useEffect(() => {
+    // console.log('hmm, this is interesting');
+    const intID = setInterval(() => {
+      console.log('hello from interval');
+    }, 1000);
+    // does not stop, keeps going
+    // every time we render component new interval gets created
+    return () => clearInterval(intID);
+  }, []);
+  return <h1>hello there</h1>;
+};
+export default CleanupFunction;
+
+```
+
+# Why use Axios instead of Fetch API
+
+- Unlike for example Axios, by default, the fetch() API does not consider HTTP status codes in the 4xx or 5xx range to be errors. Instead, it considers these status codes to be indicative of a successful request. So for fetch API we have the do the following:
+
+```js
+try {
+const resp = await fetch(url);
+// console.log(resp);
+if (!resp.ok) {
+  setIsError(true);
+  setIsLoading(false);
+  return;
+}
+
+const user = await resp.json();
+setUser(user);
+
+}
+
+```
+# Truthy and Falsy Values in Javascript
+
+- In JavaScript, a value is considered "truthy" if it is evaluated to true when used in a boolean context. A value is considered "falsy" if it is evaluated to false when used in a boolean context.
+
+- Here is a list of values that are considered falsy in JavaScript:
+
+- false 0 (zero)
+-  "" (empty string) 
+-  null 
+-  undefined 
+-  NaN (Not a Number) 
+  
+All other values, including objects and arrays, are considered truthy.
+
+```js
+const x = 'Hello';
+const y = '';
+const z = 0;
+
+if (x) {
+  console.log('x is truthy');
+}
+
+if (y) {
+  console.log('y is truthy');
+} else {
+  console.log('y is falsy');
+}
+
+if (z) {
+  console.log('z is truthy');
+} else {
+  console.log('z is falsy');
+}
+
+// Output:
+// "x is truthy"
+// "y is falsy"
+// "z is falsy"
+
+```
+- In this example, the variable x is a non-empty string, which is considered truthy, so the first if statement is executed. 
+- The variable y is an empty string, which is considered falsy, so the else block of the second if statement is executed. 
+- The variable z is the number 0, which is considered falsy, so the else block of the third if statement is executed.
+
+# Short Circuit Evaluation
+
+- In JavaScript, short-circuit evaluation is a technique that allows you to use logical operators (such as && and ||) to perform conditional evaluations in a concise way.
+
+- The && operator (logical AND) returns the first operand if it is "falsy", or the second operand if the first operand is "truthy".
+
+```js
+const x = 0;
+const y = 1;
+
+console.log(x && y); // Output: 0 (the first operand is falsy, so it is returned)
+console.log(y && x); // Output: 0 (the second operand is falsy, so it is returned)
+```
+- The || operator (logical OR) returns the first operand if it is "truthy", or the second operand if the first operand is "falsy".
+
+```js
+const x = 0;
+const y = 1;
+
+console.log(x || y); // Output: 1 (the first operand is falsy, so the second operand is returned)
+console.log(y || x); // Output: 1 (the first operand is truthy, so it is returned)
+
+```
+- Short-circuit evaluation can be useful in cases where you want to perform a certain action only if a certain condition is met, or you want to return a default value if a certain condition is not met.
+
+```js
+function displayName(name) {
+  return name || 'Anonymous';
+}
+
+console.log(displayName('Pizza')); // Output: "Pizza"
+console.log(displayName()); // Output: "Anonymous"
+```
 
 
 
