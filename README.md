@@ -428,7 +428,60 @@ function displayName(name) {
 console.log(displayName('Pizza')); // Output: "Pizza"
 console.log(displayName()); // Output: "Anonymous"
 ```
+# Remember if the parent component re-renders, it forces the child components to re-render as well
 
+## You may not need an Effect
+- They are an escape hatch from React paradigm(DOM manipulation)
+- Dont use too many useEffects(can cause network waterfalls)
+- For Data Fetching use framework's setup or React Query
+
+# Project Structure
+- Associate each component with a folder.This will ensure all the files related to that component(including any CSS files) are within that component folder
+- One way to set it up is to export the component like this
+```js
+import React from 'react'
+
+function Navbar() {
+  return <div>Navbar component</div>
+}
+
+export default Navbar
+
+
+```
+
+and then we create a new index.jsx file and export it like this:
+
+```js
+export {default} from './Navbar'
+```
+
+## Another way to create a pages folder and have all the components under it
+
+- Create an index.jsx to import first and then export all the components like this:
+
+```js
+import Home from './Home'
+import About from './About'
+
+export { Home, About }
+
+```
+
+- Then we can use them like this
+  
+```js
+import { Home, About } from './tutorial/04-project-structure/starter/Pages/'
+function App() {
+  return (
+    <div className="container">
+      <h2>Advanced React</h2>
+      <Home />
+      <About />
+    </div>
+  )
+}
+```
 
 
 
