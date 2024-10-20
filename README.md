@@ -484,8 +484,10 @@ function App() {
 ```
 
 # FormData API
+- Comes from Vanilla JS
 - a great solution when you have bunch of inputs
 - inputs must have name attribute
+- Can be used to submit form inputs even if they are uncontrolled
 The FormData interface provides a way to construct a set of key/value pairs representing form fields and their values, which can be sent using the fetch() or XMLHttpRequest.send() method. It uses the same format a form would use if the encoding type were set to "multipart/form-data".
 
 ```js
@@ -577,9 +579,48 @@ The reset() method is a built-in method in HTML that can be used to reset all fo
 - DOES NOT TRIGGER RE-RENDER
 - preserves the value between renders
 - target DOM nodes/elements
+- Used for uncontrolled inputs to access the DOM elements
 
+```js
+const refContainer = useRef(null)
 
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    console.log(value)
+    const name = refContainer.current.value
+    console.log(name)
+  }
 
+```
 
+# Custom Hooks
+- same rules as regular hooks
+- simplify component (less code)
+- re-use functionality
+
+```js
+export const useToggle = (defaultValue) => {
+  const [show, setShow] = useState(defaultValue)
+  const toggle = () => {
+    setShow(!show)
+  }
+  return { show, toggle }
+}
+
+const ToggleExample = () => {
+  //Call the custom hook
+  const { show, toggle } = useToggle(false)
+  return (
+    <div>
+      <h4>toggle custom hook</h4>
+      <button className="btn" onClick={() => toggle()}>
+        toggle
+      </button>
+      {show && <h4>some stuff</h4>}
+    </div>
+  )
+}
+export default ToggleExample
+```
 
 
