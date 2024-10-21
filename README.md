@@ -623,4 +623,113 @@ const ToggleExample = () => {
 export default ToggleExample
 ```
 
+# useContext
 
+- useContext is a hook in React that allows you to access and share context values across your component tree without passing props down manually at every level. 
+- It's perfect for sharing global state, themes, or authentication data.
+
+## Create Context
+
+```js
+import React, { createContext, useContext } from 'react';
+
+const ThemeContext = createContext();
+
+```
+
+## Provide Context
+```js
+function App() {
+  const theme = { background: 'black', color: 'white' };
+
+  return (
+    <ThemeContext.Provider value={theme}>
+      <Toolbar />
+    </ThemeContext.Provider>
+  );
+}
+
+
+```
+
+## useContext
+
+```js
+function Toolbar() {
+  const theme = useContext(ThemeContext);
+
+  return (
+    <div style={{ background: theme.background, color: theme.color }}>
+      Toolbar
+    </div>
+  );
+}
+
+
+```
+
+## Custom Hook for accessing the context
+
+```js
+//Create Context
+export const NavbarContext = createContext()
+
+//Custom hook to access the Navbar Context
+export const useAppContext = () => useContext(NavbarContext)
+
+//Consume the custom hook to access the context
+  const { user, logout } = useAppContext()
+```
+
+# useReducer
+- light version of Redux
+- less bugs and easier code management
+- redux has boilerplate code
+- So React released useReducer hook
+- This hook is middle ground between redux and useState hook
+- Reducer is a function that manipulates the state
+- useReducer is a hook in React that's perfect for managing state with more complex logic, especially when state transitions depend on previous states. 
+- It’s like a more powerful version of useState.
+
+```js
+const [state, dispatch] = useReducer(reducer, defaultState)
+const CLEAR_LIST = 'CLEAR_LIST'
+const RESET_LIST = 'RESET_LIST'
+const REMOVE_ITEM = 'REMOVE_ITEM'
+
+const defaultState = {
+  people: data,
+}
+const reducer = (state, action) => {
+  switch (action.type) {
+    case CLEAR_LIST:
+      return { ...state, people: [] }
+    case RESET_LIST:
+      return { ...state, people: data }
+    case REMOVE_ITEM:
+      return {
+        ...state,
+        people: state.people.filter((x) => x.id != action.payload),
+      }
+    default: throw new Error(`No matching "${action.type}" -action type`)
+  }
+}
+
+const removeItem = (id) => {
+    dispatch({ type: REMOVE_ITEM, payload: id })
+  }
+
+const reset = () => {
+    dispatch({ type: RESET_LIST })
+  }
+
+  {state.people.map((person) => {
+        const { id, name } = person
+        return (
+          <div key={id} className="item">
+            <h4>{name}</h4>
+            <button onClick={() => removeItem(id)}>remove</button>
+          </div>
+        )
+      })}
+```
