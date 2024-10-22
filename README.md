@@ -733,3 +733,168 @@ const reset = () => {
         )
       })}
 ```
+
+# Improving Performance of React Applications
+
+## When does a Component Re-Render ? :
+
+- When the component's state or props change, React will re-render the component to reflect these changes.
+- When the parent element re-renders, even if the component's state or props have not changed.
+- lower state
+
+### First Possible Solution: Lower the State
+- Create a new component and move useState to that component
+- This basically involves breaking down your components and splitting the logic(Code-splitting)
+- Move the code that is triggering state changes into a separate component with its own component
+
+### React.memo()
+- React.memo is a higher-order component (HOC) in React that allows you to memoize a component. 
+- This means that if the input props to the component have not changed, the memoized component will return the same result from the previous render, instead of re-rendering. 
+- This can help improve performance by avoiding unnecessary render cycles.
+- The React.memo function takes a functional component as its argument and returns a new component that has the same behavior, but with the added optimization of checking if the props have changed.
+-  If the props have not changed, the memoized component will return the cached result from the previous render.
+  
+```js
+const MyComponent = React.memo(function MyComponent(props) {
+  /* render logic */
+});
+```
+
+
+```js
+import { memo } from 'react'
+import Item from './Person'
+
+const List = ({ people }) => {
+  return (
+    <div>
+      {people.map((person) => {
+        return <Item key={person.id} {...person} />
+      })}
+    </div>
+  )
+}
+export default memo(List)
+
+
+```
+
+### useCallback 
+
+- The useCallback hook is a hook in React that allows you to memoize a function. 
+-  It takes two arguments: the first is the function you want to memoize, and the second is an array of dependencies. 
+-  The hook will return a memoized version of the function that only changes if one of the values in the dependency array changes.
+-  By memoizing the function, you can avoid unnecessary re-renders and improve the performance of your React application. 
+-  The function will only be re-created if one of its dependencies changes, otherwise the same instance of the function will be returned. 
+-  This can be useful in situations where you have an expensive function that you only want to recompute when its dependencies change.
+
+```js
+import React, { useCallback, useState } from 'react';
+
+function MyComponent() {
+  const [data, setData] = useState([]);
+  const handleClick = useCallback(() => {
+    console.log(data);
+  }, [data]);
+
+  return (
+    <div>
+      <button onClick={handleClick}>Click me</button>
+    </div>
+  );
+}
+
+```
+- In this example, the handleClick function is memoized using useCallback and the data prop is passed as a dependency. 
+- This means that the handleClick function will only be re-created if the data prop changes.
+
+### useMemo
+- The useMemo hook is a hook in React that allows you to memoize a value.
+- It takes two arguments: the first is a function that returns the value you want to memoize, and the second is an array of dependencies. 
+- The hook will return the memoized value that will only change if one of the values in the dependency array changes.
+- By memoizing a value, you can avoid unnecessary calculations and improve the performance of your React application. 
+- . The value will only be recalculated if one of its dependencies changes, otherwise the same instance of the value will be returned.
+- This can be useful in situations where you have an expensive calculation that you only want to recompute when its dependencies change.
+
+```js
+import React, { useMemo } from 'react';
+
+function MyComponent({ data }) {
+  const processedData = useMemo(() => {
+    return data.map((item) => item.toUpperCase());
+  }, [data]);
+
+  return (
+    <div>
+      {processedData.map((item) => (
+        <div key={item}>{item}</div>
+      ))}
+    </div>
+  );
+}
+
+```
+- In this example, the processedData value is memoized using useMemo and the data prop is passed as a dependency.
+- This means that the processedData value will only be recalculated if the data prop changes.
+
+### useTransition Hook
+- Available from React 18
+- useTransition is a React Hook that lets you update the state without blocking the UI.
+-  It’s particularly useful when you want to keep the UI responsive during state updates that might take a bit longer, like filtering a large list.
+-  For e.g user types something in input and we have to filter some 20000 items(expensive computation). This can make our app un-responsive, so we can use useTransition hook here.
+-  Has very specific use-cases
+
+```js
+import React, { useState, useTransition } from 'react';
+
+function FilterableList({ items }) {
+  const [filter, setFilter] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const [filteredItems, setFilteredItems] = useState(items);
+
+  const handleChange = (event) => {
+    const value = event.target.value;
+    setFilter(value);
+
+  // slow function goes in start transition
+    startTransition(() => {
+      const filtered = items.filter(item => item.includes(value));
+      setFilteredItems(filtered);
+    });
+  };
+
+  return (
+    <div>
+      <input type="text" value={filter} onChange={handleChange} />
+      {isPending ? <p>Loading...</p> : <ul>{filteredItems.map((item, index) => <li key={index}>{item}</li>)}</ul>}
+    </div>
+  );
+}
+
+```
+
+- useTransition returns isPending (a boolean indicating if the transition is pending) and startTransition (a function to start the transition).
+- When the input value changes, the startTransition function updates the filtered items without blocking the input field's responsiveness.
+- The UI shows a loading message while the transition is in progress.
+- This hook can make your app feel snappier by deferring updates that aren't immediately visible to the user, keeping interactions smooth.
+
+
+### React Suspense
+- The Suspense API is a feature in React that allows you to manage the loading state of your components. 
+- It provides a way to "suspend" rendering of a component until some data has been fetched, and display a fallback UI in the meantime.
+- This makes it easier to handle asynchronous data loading and provide a smooth user experience in your React application.
+
+```js
+import React, { lazy, Suspense } from 'react';
+
+const DataComponent = lazy(() => import('./DataComponent'));
+
+function MyComponent() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DataComponent />
+    </Suspense>
+  );
+}
+
+```
