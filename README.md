@@ -898,3 +898,210 @@ function MyComponent() {
 }
 
 ```
+
+# Axios Http Library
+- Fetching Data from and Sending Data to Server
+- HTTP Library used for data fetching
+- Not part of React
+- Can be used with any framework
+- Popular for Data Fetching
+- Axios makes handling HTTP requests super straightforward and integrates seamlessly with React.
+- Axios is a popular HTTP client for making requests in JavaScript, and it works great with React. Here's a quick guide to using axios in a React application:
+
+```js
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+function DataFetchingComponent() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    axios.get('https://api.example.com/data')
+      .then(response => {
+        setData(response.data);
+        setLoading(false);
+      })
+      .catch(error => {
+        setError(error);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error.message}</p>;
+
+  return (
+    <ul>
+      {data.map(item => (
+        <li key={item.id}>{item.name}</li>
+      ))}
+    </ul>
+  );
+}
+
+export default DataFetchingComponent;
+
+
+```
+
+- default get axios(url)
+- returns a promise
+- response data located in data property
+- error in error.response
+- axios.get(url)
+- axios.post(url)
+- axios.patch/put(url)
+- axios.delete(url)
+
+## Axios Headers
+- Axios Headers are usually the second argument in an axios request
+- axios.get(url,{})
+- However in requests with data it is usually the third argument
+- axios.post(url,{data},{})
+
+```js
+const fetchDadJoke = async () => {
+    try {
+      const response = await axios(url,{headers:{
+        Accept:'application/json'
+      }});
+      console.log(response.data)
+      setJoke(response.data.joke)
+    } catch (error) {
+      console.log(error.response)
+    }
+    
+  };
+
+```
+
+## Axios Post Request
+- send data to the server
+- axios.post(url, { data })
+- more options (auth header) - axios.post(url, { data },{})
+
+```js
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(url,{name:name,email:email},{headers:{
+        Accept:'application/json'
+      }})
+      console.log(response.data)
+      setMessage(response.data.msg)
+    } catch (error) {
+      console.log(error.response)
+    }
+   
+  };
+```
+
+## Setting Global Defaults
+- Cant be setting the header to application/json all the time
+- So we can use global defaults property of axios
+- Setting global defaults in Axios makes configuring your requests consistent and easy.
+- The below technique sets global defaults that apply to all Axios requests.
+
+```js
+import axios from 'axios';
+
+// Set defaults directly on the Axios instance
+axios.defaults.baseURL = 'https://api.example.com';
+//Returns undefined in latest axios versions
+axios.defaults.headers.common['Authorization'] = 'Bearer your_token';
+axios.defaults.timeout = 1000;
+// In latest axios version common property returns "undefined"
+// axios.defaults.headers.common['Accept'] = 'application/json';
+axios.defaults.headers['Accept'] = 'application/json';
+
+axios.defaults.baseURL = 'https://api.example.com';
+
+// In latest axios version common property returns "undefined"
+// axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
+axios.defaults.headers['Authorization'] = AUTH_TOKEN;
+
+axios.defaults.headers.post['Content-Type'] =
+  'application/x-www-form-urlencoded';
+
+```
+- **Global Instance may not be suitable for all scenarios. We may need a custom axios instance also**
+- We can also setup a custom axios instance and configure these properties for that instance only
+
+```js
+import axios from 'axios';
+
+const instance = axios.create({
+  baseURL: 'https://api.example.com',
+  timeout: 1000,
+  headers: { 'Authorization': 'Bearer your_token' }
+});
+
+export default instance;
+
+
+import axios from 'axios';
+import authFetch from './custom';
+const CustomInstance = () => {
+  const fetchData = async () => {
+    try {
+      const resp1 = await authFetch('/react-store-products');
+      const resp2 = await axios(randomUserUrl);
+    } catch (error) {
+      console.log(error.response)
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  return <h2 className='text-center'>custom instance</h2>;
+};
+
+```
+
+## Interceptors
+- These are functions that axios calls for every request
+- Can be used to transform the request before it leaves the application
+- Can add custom logic to the response
+- Interceptors in Axios are like middleware for your HTTP requests and responses. 
+- They allow you to modify requests before they are sent and responses before they are handled by then. 
+- Super handy for tasks like adding authentication tokens or handling errors globally.
+
+- Request Interceptor
+```js
+axios.interceptors.request.use(config => {
+  // Do something before request is sent
+  config.headers.Authorization = `Bearer your_token`;
+  return config;
+}, error => {
+  // Handle the error
+  return Promise.reject(error);
+});
+
+
+```
+
+- Response Interceptor
+
+```js
+axios.interceptors.response.use(response => {
+  // Do something with response data
+  return response;
+}, error => {
+  // Handle the error
+  if (error.response.status === 401) {
+    // Handle unauthorized error
+  }
+  return Promise.reject(error);
+});
+
+
+```
+
+- Basically they are just functions
+- Can make some global app decisions
+- Attach Bearer Tokens used in authentication
+- If we get response of 401 we can logout the user in all the requests
