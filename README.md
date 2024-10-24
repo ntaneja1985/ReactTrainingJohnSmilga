@@ -1105,3 +1105,299 @@ axios.interceptors.response.use(response => {
 - Can make some global app decisions
 - Attach Bearer Tokens used in authentication
 - If we get response of 401 we can logout the user in all the requests
+
+# React Query
+- Use HTTP Method PUT when you want to replace a resource entirely, and PATCH when you want to make partial updates.
+- PUT is idempotent, that means that multiple identical requests should have the same effect as a single request.
+- PATCH is not idempotent which means that multiple identical requests may result in different outcomes depending on the state changes.
+- React Query is a state management library that simplifies the process of fetching, caching, and updating data in React applications.
+- Simplifies management of state and data
+- version 4 of React Query
+- Its major benefits include automatic background refetching, caching and stale data management, error handling, and easy pagination and infinite scrolling. 
+- Compared to setting up requests with useEffect, React Query provides a more declarative and centralized approach to managing data in React, which results in cleaner and more efficient code. 
+- It also reduces boilerplate code and improves performance by minimizing unnecessary re-renders and network requests.
+
+```sh
+npm i @tanstack/react-query
+```
+
+- Setting up React Query in main.jsx
+- We want to wrap our App inside the QueryClientProvider
+
+```js
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+const queryClient = new QueryClient();
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <QueryClientProvider client={queryClient}>
+    <App />
+  </QueryClientProvider>
+);
+
+```
+
+- Since React Query is a library, so we dont have to use Context all the time.
+- We can setup our queries in multiple components right out of the box
+
+## React Query requires 2 parameters:
+- Query Key: This is the unique key that we provide that is used internally for refetching, caching and sharing your queries throughout the application
+- Query Function: This can be any function that returns a promise. The promise that is returned should either return some data or throw an error.
+
+- Usage can be as follows:
+
+```js
+import { useQuery } from '@tanstack/react-query';
+
+const result = useQuery({
+  queryKey: ['tasks'],
+  queryFn: () => customFetch.get('/'),
+});
+console.log(result);
+```
+
+**How can we fetch and render data with React Query**
+
+```js
+import SingleItem from './SingleItem'
+import { useQuery } from '@tanstack/react-query'
+import customFetch from './utils'
+const Items = () => {
+  const { isLoading, data, error, isError } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: async () => {
+      const { data } = await customFetch.get('/')
+      return data
+    },
+  })
+
+  if (isLoading) {
+    return <p style={{ marginTop: '1rem ' }}>Loading...</p>
+  }
+  if (error) {
+    return <p style={{ marginTop: '1rem ' }}>{error.message}</p>
+  }
+  return (
+    <div className="items">
+      {data &&
+        data.taskList.map((item) => {
+          return <SingleItem key={item.id} item={item} />
+        })}
+    </div>
+  )
+}
+export default Items
+
+
+```
+
+- Here custom fetch is defined as follows:
+  
+```js
+import axios from 'axios'
+
+const customFetch = axios.create({
+    baseURL:'http://localhost:5000/api/tasks',
+})
+
+export default customFetch
+
+```
+- If React Query detects an error, it tries a few times automatically.
+
+## In React Query, when we want to fetch we use useQuery() and when we want to POST/PUT/DELETE we use useMutation
+
+- useMutation in React Query is used for creating and managing mutations, which are operations that change data on the server (like creating, updating, or deleting data).
+
+```js
+import React from 'react';
+import { useMutation, useQueryClient } from 'react-query';
+import axios from 'axios';
+
+function AddTodo() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation(newTodo => axios.post('/todos', newTodo), {
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries('todos');
+    },
+  });
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const newTodo = {
+      title: form.elements.title.value,
+    };
+
+    mutation.mutate(newTodo);
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleSubmit}>
+        <input type="text" name="title" placeholder="Add new todo" />
+        <button type="submit">Add</button>
+      </form>
+
+      {mutation.isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        mutation.isError ? (
+          <p>Error: {mutation.error.message}</p>
+        ) : (
+          mutation.isSuccess && <p>Todo added successfully!</p>
+        )
+      )}
+    </div>
+  );
+}
+
+export default AddTodo;
+
+
+```
+- In this example:
+
+- useMutation is used to handle a POST request to add a new todo.
+
+- onSuccess is used to invalidate and refetch the todos query, ensuring the UI stays updated.
+
+- The form submission triggers the mutation with mutation.mutate(newTodo).
+
+- It’s a nifty tool for managing data changes and syncing your UI.
+  
+- useMutation comes with some **helper options** that allow quick and easy side-effects at any stage during the mutation lifecycle. These come in handy for both **invalidating and refetching queries** after mutations
+
+```js
+const { mutate: createTask, isLoading } = useMutation({
+  mutationFn: (taskTitle) => customFetch.post('/', { title: taskTitle }),
+  onSuccess: () => {
+    // do something
+  },
+  onError: () => {
+    // do something
+  },
+});
+
+```
+
+**Code for Creating/Editing/Deleting Tasks**
+
+
+```js
+//Form.jsx
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import customFetch from './utils'
+
+const Form = () => {
+  const queryClient = useQueryClient()
+  const [newItemName, setNewItemName] = useState('')
+  const { mutate: createTask, isLoading } = useMutation({
+    mutationFn: (taskTitle) => customFetch.post('/', { title: taskTitle }),
+    onSuccess: () => {
+      // do something
+      queryClient.invalidateQueries('tasks')
+    },
+    onError: () => {
+      // do something
+    },
+  })
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    createTask(newItemName)
+  }
+  return (
+    <form onSubmit={handleSubmit}>
+      <h4>task bud</h4>
+      <div className="form-control">
+        <input
+          type="text "
+          className="form-input"
+          value={newItemName}
+          onChange={(event) => setNewItemName(event.target.value)}
+        />
+        <button type="submit" className="btn">
+          add task
+        </button>
+      </div>
+    </form>
+  )
+}
+export default Form
+
+
+//SingleItem.jsx
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import customFetch from './utils'
+
+const SingleItem = ({ item }) => {
+  const queryClient = useQueryClient()
+
+  const { mutate: editTask, isLoading } = useMutation({
+    mutationFn: (item) =>
+      customFetch.patch('/' + item.id, { isDone: !item.isDone }),
+    onSuccess: () => {
+      // do something
+      queryClient.invalidateQueries('tasks')
+    },
+    onError: () => {
+      // do something
+    },
+  })
+
+  const { mutate: deleteTask } = useMutation({
+    mutationFn: (id) => customFetch.delete('/' + item.id),
+    onSuccess: () => {
+      // do something
+      queryClient.invalidateQueries('tasks')
+    },
+    onError: () => {
+      // do something
+    },
+  })
+
+  const handleEdit = (item) => {
+    console.log('edit task ' + item.id)
+    editTask(item)
+  }
+
+  const handleDelete = (id) => {
+    console.log('delete task ' + id)
+    deleteTask(id)
+  }
+
+  return (
+    <div className="single-item">
+      <input
+        type="checkbox"
+        checked={item.isDone}
+        onChange={() => handleEdit(item)}
+      />
+      <p
+        style={{
+          textTransform: 'capitalize',
+          textDecoration: item.isDone && 'line-through',
+        }}
+      >
+        {item.title}
+      </p>
+      <button
+        className="btn remove-btn"
+        type="button"
+        onClick={() => handleDelete(item.id)}
+      >
+        delete
+      </button>
+    </div>
+  )
+}
+export default SingleItem
+
+```
+
+**In Custom Hooks we have to use the existing hooks, cannot reuse them in different custom hooks**
+
