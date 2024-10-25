@@ -1401,3 +1401,295 @@ export default SingleItem
 
 **In Custom Hooks we have to use the existing hooks, cannot reuse them in different custom hooks**
 
+# React Router
+- React Router is a JavaScript library used in React applications to handle routing and navigation. 
+- It provides a declarative way to define the routes of an application and render different components based on the current URL.
+- React Router allows developers to create a seamless, client-side navigation experience within a SPA by mapping URLs to specific components and managing the history and URL changes.
+
+```shell
+npm i react-router-dom@6.11.2
+```
+## React Router DOM Library
+- Enables client side routing
+- Used to build SPA
+- Can create multi-page experience in a single page
+- Controls the rendering the components
+- Can build interactive and seamless experience
+
+```js
+import {createBrowserRouter,RouterProvider} from "react-router-dom";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <h2>Home Page</h2>
+  },
+  {
+    path: "/about",
+    element: <div><h2>About Page</h2></div>
+  }
+])
+const App = () => {
+  return <RouterProvider router={router}></RouterProvider>;
+};
+export default App;
+
+```
+## In React-Router we can specify where we want to display all the child links in a component using an outlet
+
+```js
+import React from 'react'
+
+import {Outlet} from "react-router-dom";
+
+const HomeLayout = () => {
+    return (
+        <div>
+            <nav>navbar</nav>
+            <Outlet/>
+        </div>
+    )
+}
+export default HomeLayout
+
+```
+- We can also specify which child element will be the index element i.e the default component that will be displayed when we navigate to that component
+```js
+const router = createBrowserRouter([
+    {
+        path: "/",
+        element: <HomeLayout/>,
+        children: [
+            {
+                index:true,
+                element: <Landing/>
+            },
+            {
+                path: "cocktail",
+                element: <Cocktail/>
+            },
+            {
+                path: "newsletter",
+                element: <Newsletter/>
+            },
+            {
+                path: "/about",
+                element: <About/>
+            }
+        ]
+
+    },
+    {
+        path: "about",
+        element: <About/>
+    }
+])
+```
+- We can nest as deep as we want in our project using children[] and using the Outlet
+
+## Styled Components
+- CSS in JS
+- Styled Components
+- have logic and styles in component
+- no name collisions
+- apply javascript logic
+
+```shell
+npm install styled-components
+```
+
+```js
+import styled from 'styled-components';
+
+const El = styled.el`
+  // styles go here
+  
+ const StyledBtn = styled.button`
+background:red;
+color:white;
+font-size: 2rem;
+padding: 1rem;
+`;
+
+ <nav><div className='nav-center'>
+            <StyledBtn>styled btn</StyledBtn>
+            <span className='logo'>Mixmaster</span>
+```
+
+# Error Handling in React Router DOM
+
+- We have the option to specify an error element as part of the path like this:
+
+```js
+ path: "/",
+    element: <HomeLayout/>,
+    errorElement: <Error/>,
+    children: [
+    {
+        index:true,
+        element: <Landing/>
+    },
+    {
+        path: "cocktail",
+        element: <Cocktail/>
+    },
+]
+```
+- Inside the error page, we can use the **useRouteError** hook to grab the error and display it in a graceful manner to the user
+```js
+const Error = () => {
+    const error = useRouteError();
+    console.log(error);
+    if(error.status === 404) {
+        return <Wrapper><div>
+            <img src={img} alt="404" />
+            <h3>Ohh!</h3>
+            <p>{error.data}</p>
+            <Link to="/">Go Back</Link>
+        </div></Wrapper>
+    }
+    return (
+        <Wrapper><h3>Something went wrong</h3></Wrapper>
+    )
+}
+```
+ # Loading Data
+- Earlier how did we use to fetch data? useEffect ?
+- useEffect() runs after the page has rendered (similar to document.ready())
+- But we should have the ability to pre-fetch the data before the page has rendered
+- Latest React Router version provides us with a **loader** function
+- Each route can define a loader function to provide the data to the route element even before it renders.
+- This function must return something even "null" otherwise an error will be thrown
+- This loader function cannot be a hook
+
+```js
+// App.jsx
+import {loader as landingLoader} from "./pages/Landing.jsx";
+path: "/",
+    element: <HomeLayout/>,
+    errorElement: <Error/>,
+    children: [
+    {
+        index:true,
+        loader: landingLoader,
+        element: <Landing/>
+    },
+    
+// Landing.jsx
+import {useLoaderData} from "react-router-dom";
+
+export const loader =  async () => {
+    return 'something';
+};
+
+const Landing = () => {
+    const data = useLoaderData();
+    console.log(data);
+
+    return (
+        <div>Landing</div>
+    )
+}
+export default Landing
+
+```
+### If we find that when we navigate from one page to another page is slow, we can use the useNavigation() hook
+- Using the useNavigate() hook we can check its state whether page is loading or not
+- This is important since we are using the loader() function for the components by prefetching all the data before rendering the component to the user
+- using the useNavigate() hook we can also pass data around to all the pages like below we are passing 'someValue'
+- A better example would be to get the user data and pass it around to various pages like user's authentication and authorization details
+- To use this data that is passed around, use the useOutletContext hook like this:
+```js
+import {useOutletContext} from "react-router-dom";
+const data = useOutletContext();
+console.log(data)
+
+```
+- Here is an example how we can show a loading spinner when we navigate between pages
+```js
+import React from 'react'
+
+import {Outlet, useNavigation} from "react-router-dom";
+import Navbar from "../components/Navbar.jsx";
+
+const HomeLayout = () => {
+    const navigation = useNavigation();
+    const isLoading = navigation.state === 'loading';
+    const value = 'someValue';
+    return (
+        <>
+            <Navbar/>
+            <section className='page'>
+                {isLoading ? (
+                    <div className='loading'></div>
+                ): (
+                    <Outlet context={{value}}/>
+                )}
+
+            </section>
+
+        </>
+    )
+}
+export default HomeLayout
+
+```
+- To get the list of properties from object and iterate over them use this code:
+
+```js
+  const validIngredients = Object.keys(singleDrink)
+        .filter(
+            (key) => key.startsWith('strIngredient') && singleDrink[key] !== null
+        )
+        .map((key) => singleDrink[key]);
+```
+
+### Navigate in React Router DOM
+- The Navigate component in react-router-dom is used to programmatically navigate to different routes in your React application. 
+- It's like telling your app to switch to a different page or route based on a condition or user action.
+- Navigate works like a client-side redirect to a different route.
+```js
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+function App() {
+    const isLoggedIn = false; // Example condition
+
+    return (
+        <Router>
+            <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/" />} />
+            </Routes>
+        </Router>
+    );
+}
+
+function Home() {
+    return <h1>Home Page</h1>;
+}
+
+function Dashboard() {
+    return <h1>Dashboard</h1>;
+}
+
+export default App;
+
+```
+
+# React Toastify
+- React-Toastify is a popular library for creating toast notifications in React applications1
+- Toast notifications are non-intrusive messages that inform users about events, actions, or alerts1
+- They appear briefly and then disappear, making them perfect for providing feedback without disrupting the user experience.
+
+```js
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from 'react-toastify';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <ToastContainer position='top-center' autoClose={2000} />
+    <App />
+  </React.StrictMode>
+);
+```
