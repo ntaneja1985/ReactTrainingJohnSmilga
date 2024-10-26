@@ -1693,3 +1693,199 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 ```
+
+## Action attribute in HTML
+- The "action" attribute in an HTML form specifies the URL or destination where the form data should be sent when the form is submitted. 
+- It defines the server-side script or endpoint that will receive and process the form data.
+- If the action attribute is not provided in the HTML form, the browser will send the form data to the current URL, which means it will submit the form to the same page that the form is on. 
+- This behavior is referred to as a "self-submitting" form.
+- By default, if action attribute is not specified, we perform a GET request on the form with its values as key value pairs
+
+
+## FormData API
+- The FormData interface provides a way to construct a set of key/value pairs representing form fields and their values, which can be sent using the fetch() or XMLHttpRequest.send() method. 
+- It uses the same format a form would use if the encoding type were set to "multipart/form-data".
+
+## React Router - Action
+- Route actions are the "writes" to route loader "reads". Remember reading is done using useLoaderData hook.
+- They provide a way for apps to perform data mutations with simple HTML and HTTP semantics while React Router abstracts away the complexity of asynchronous UI and revalidation.
+- This is similar to useMutation() hook used in React Query where useQuery is used for Reading and useMutation is used for POST/PATCH/DELETE
+- This gives you the simple mental model of HTML + HTTP (where the browser handles the asynchrony and revalidation) with the behavior and UX capabilities of modern SPAs.
+
+```js
+
+//First we import the Form from react router DOM and set it up and setup its method as POST
+import { Form } from 'react-router-dom';
+
+//Here we define the action to be taken when form is posted. We use the formData API to pull out the values
+//from the form.
+import {Form, redirect, useNavigation} from 'react-router-dom';
+export const action = async({request}) =>{
+    const newsletterUrl = 'https://www.course-api.com/cocktails-newsletter';
+    const formData = await request.formData();
+    const data = Object.fromEntries(formData);
+    console.log(data);
+    try{
+        const response = await axios.post(newsletterUrl, data);
+        console.log(response);
+        toast.success(response.data.msg);
+        //return response;
+        //We have to return something
+        return redirect('/')
+    } catch (error) {
+        console.log(error);
+        toast.error(error?.response?.data?.msg);
+        return error;
+    }
+}
+
+const Newsletter = () => {
+    const navigation = useNavigation();
+    const isSubmitting = navigation.state === 'submitting';
+    return (
+        <Form className='form' method='POST'>
+            <h4 style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                our newsletter
+            </h4>
+            {/* name */}
+            <div className='form-row'>
+                <label htmlFor='name' className='form-label'>
+                    name
+                </label>
+                <input
+                    type='text'
+                    className='form-input'
+                    name='name'
+                    id='name'
+                    required
+                    defaultValue='nishant'
+                />
+            </div>
+            {/* last name */}
+            <div className='form-row'>
+                <label htmlFor='lastName' className='form-label'>
+                    last name
+                </label>
+                <input
+                    type='text'
+                    className='form-input'
+                    name='lastName'
+                    id='lastName'
+                    required
+                    defaultValue='taneja'
+                />
+            </div>
+            {/* name */}
+            <div className='form-row'>
+                <label htmlFor='email' className='form-label'>
+                    email
+                </label>
+                <input
+                    type='email'
+                    className='form-input'
+                    name='email'
+                    id='email'
+                    required
+                    defaultValue='nishant@test.com'
+                />
+            </div>
+            <button
+                type='submit'
+                className='btn btn-block'
+                style={{ marginTop: '0.5rem' }}
+                disabled={isSubmitting}
+            >
+                {isSubmitting ? 'submitting...' : 'submit'}
+            </button>
+        </Form>
+    );
+};
+// Here we specify how to use the action in the page, similar to loader, we have to specify the action to be taken
+// on that particular route using the action property.
+        
+        import { action as newsletterAction } from './pages/Newsletter';
+        const router = createBrowserRouter([
+        {
+            path: '/',
+            element: <HomeLayout />,
+            errorElement: <Error />,
+            children: [
+        {
+            path: 'newsletter',
+            action: newsletterAction,
+            element: <Newsletter />,
+        },
+            ],
+        },
+        ]);
+
+```
+
+# Setting up Search functionality in the form
+- const url = new URL(request.url); This line of code creates a **new URL object** using the **URL constructor**. 
+- The **URL object** represents a URL and provides methods and properties for working with URLs. 
+- In this case, the request.url is passed as an argument to the URL constructor to create a new URL object called url.
+- The **request.url** is an input parameter representing the URL of an incoming HTTP request. 
+- By creating a URL object from the provided URL, you can easily extract specific components and perform operations on it.
+- const searchTerm = url.searchParams.get('search') || ''; This line of code retrieves the value of the search parameter from the **query string** of the URL. 
+- The searchParams property of the URL object provides a **URLSearchParams** object, which allows you to access and manipulate the query parameters of the URL.
+- The get() method of the URLSearchParams object retrieves the value of a specific parameter by passing its name as an argument. In this case, 'search' is passed as the parameter name. If the search parameter exists in the URL's query string, its value will be assigned to the searchTerm variable. 
+- If the search parameter is not present or its value is empty, the expression '' (an empty string) is assigned to searchTerm using the logical OR operator (||).
+```js
+export const loader = async ({ request }) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get('search') || '';
+  const response = await axios.get(`${cocktailSearchUrl}${searchTerm}`);
+  return { drinks: response.data.drinks, searchTerm };
+};
+```
+
+### Now in HTML we get input type='search'. This is useful in getting URLSearchParams
+
+# Using React Router with React Query
+- Usually in all applications we build using React Router, we search for some stuff on the server, get the result back and display that result
+- But notice that everytime we use the loader function(and within it axios) to make the request, we are doing far too many requests
+- In the mixmaster application also ,we are making requests everytime we navigate to a particular drink and get the results back from the server
+- Also everytime, we go to the Homepage, we are again making a request to the server each time.
+- This can create Network waterfalls, so we need to cache all these requests
+- That is why we need React Query and we can get the data faster
+- Note that loaders are not hooks, they are functions that return something.
+
+```js
+const searchCocktailsQuery = (searchTerm) => {
+    return {
+        queryKey: ['search', searchTerm || 'all'],
+        queryFn: async () => {
+            // Default to 'a' if no search term is provided since API has changed
+            searchTerm = searchTerm || 'm';
+            const response = await axios.get(`${cocktailSearchUrl}${searchTerm}`);
+            return response.data.drinks;
+        },
+    };
+};
+```
+- However, we want to cache our queries. Also, we want to ensure the data is prefetched before the component is loaded
+- We somehow need to pass in the query client to the loader and ensure that it uses the query client to pre-fetch the data before the component is loaded
+- We can do it like this. 
+- Also note the use of the **ensureQueryData()** method which ensures that query runs before the component is loaded. It will either fetch from the cache or invoke the function
+
+```js
+export const loader = (queryClient) =>  async ({request}) => {
+    const url = new URL(request.url);
+    const searchTerm = url.searchParams.get('search') || 'm';
+    await queryClient.ensureQueryData(searchCocktailsQuery(searchTerm));
+    //const response = await axios.get(`${cocktailSearchUrl}${searchTerm}`);
+    //return { drinks: response.data.drinks, searchTerm };
+    return {searchTerm};
+};
+
+//This is passed like this from App.jsx
+{
+    index:true,
+        errorElement: <SinglePageError/>,
+    loader: landingLoader(queryClient),
+    element: <Landing/>
+},
+```
+- If we see in React Query dev tools, we can see the data is being cached.
+![img.png](img.png)
