@@ -1889,3 +1889,89 @@ export const loader = (queryClient) =>  async ({request}) => {
 ```
 - If we see in React Query dev tools, we can see the data is being cached.
 ![img.png](img.png)
+
+
+# Tailwind CSS
+- Most popular way of using CSS in React Applications
+- Tailwind provides a bunch of colors and their shades(for e.g bg-green-500)
+- Padding p-1 (padding all around of 0.25 rem), px-1 (padding-left:0.25rem,padding-right:0.25rem)
+- Padding py-1(padding-top:0.25rem, padding-bottom:0.25rem)
+- Padding pb-1 (padding-bottom:0.25rem)
+- 1 rem = 16px
+- pr-1 (padding-right:0.25rem)
+- Same for margin
+- Same for width (w-1) width:0.25rem
+- w-96 (Fixed width) w: 24rem
+- Use w-{fraction} or w-full to set an element to a percentage based width: like w-full(span full line) means width of 100%
+- w-1/2 (width of 50%)
+- Useful in grid w-full (full width of column)
+- For effects like 'hover' use hover:bg-sky-700
+- No need for media queries in CSS
+- By default, we are on small screen so w-16 md:w-32 lg:w-48 means show width of 16 on small screen, 32 on medium screen and 48 on large screen
+- Here small(640px) medium(768px) and large is 1024px
+- We also have xl(1280px) and 2xl(1536px) screen sizes
+- We can use flexbox and grid here also
+- We can add flex-wrap and grid-cols-8 means a grid with 8 columns
+
+## Tailwind directives
+- Instructions that decide how Tailwind CSS creates the styles for your website. 
+- They control the global styles, component styles, and utility classes.
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+- We can create custom CSS class in index.css like this which can be reused across components
+
+```css
+@layer components {
+  .align-element {
+    @apply mx-auto max-w-7xl px-8;
+  }
+}
+```
+- In tailwind CSS we can also setup certain elements to be shown in one particular screen and hidden in another like this
+```css
+<article className='hidden md:block '>
+<img src={heroImg} className='h-80 lg:h-96' />
+</article>
+```
+- The above image will be hidden in small screens and visible on medium screen
+
+## Setting up Global Styles
+- We can do it in index.html
+
+```html
+<html lang="en" class="bg-slate-50 scroll-smooth"></html>
+```
+
+# Sample Component with Tailwind CSS
+
+```js
+import { FaGithubSquare, FaLinkedin, FaTwitterSquare } from 'react-icons/fa';
+import { TbWorldWww } from 'react-icons/tb';
+const ProjectsCard = ({ url, img, github, title, text }) => {
+    return (
+        <article className='bg-white rounded-lg shadow-md block hover:shadow-xl duration-300'>
+            <img
+                src={img}
+                alt={title}
+                className='w-full object-cover rounded-t-lg h-64 '
+            />
+            <div className='capitalize p-8'>
+                <h2 className='text-xl tracking-wide font-medium'>{title}</h2>
+                <p className='mt-4 text-slate-700 leading-loose'>{text}</p>
+                <div className='mt-4 flex gap-x-4'>
+                    <a href={url}>
+                        <TbWorldWww className='h-8 w-8 text-slate-500 hover:text-black duration-300' />
+                    </a>
+                    <a href={github}>
+                        <FaGithubSquare className='h-8 w-8 text-slate-500 hover:text-black duration-300' />
+                    </a>
+                </div>
+            </div>
+        </article>
+    );
+};
+export default ProjectsCard;
+```
