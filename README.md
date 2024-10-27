@@ -1975,3 +1975,407 @@ const ProjectsCard = ({ url, img, github, title, text }) => {
 };
 export default ProjectsCard;
 ```
+
+# Redux Toolkit
+- Used in bigger applications
+- Not part of Official React
+- Has a lot of boilerplate and annoying setup
+- Has opinionated approach
+- Consists of a few libraries
+1. redux (core library, state management)
+2. immer (allows to mutate state)
+3. redux-thunk (handles async actions)
+4. reselect (simplifies reducer functions)
+- Also has
+1. Redux DevTools
+2. Combine Reducers
+
+**react-redux**
+- connects our app to redux
+
+- Redux can be used with any framework, it is not specific to React
+
+# Setting up Redux
+- create a store first
+```js
+import { configureStore } from '@reduxjs/toolkit';
+
+export const store = configureStore({
+  reducer: {},
+});
+```
+- setup a provider in main.jsx
+```js
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import store from "./store.jsx";
+import {Provider} from 'react-redux';
+
+import './index.css';
+import App from './App';
+
+const container = document.getElementById('root');
+const root = createRoot(container);
+
+root.render(
+    <React.StrictMode>
+        <Provider store={store}>
+            <App />
+        </Provider>
+    </React.StrictMode>
+);
+
+```
+- setup slice
+- Slice is a feature of our application. For example, we can have a cartSlice,userSlice,ItemsSlice
+- Setup features folder/name_of_feature
+- Lets say we have a cartSlice, this slice is responsible only for our cart
+- It has an initial state and reducers to control that particular state only
+- We need to import those reducers inside our main store
+- These reducers are just functions that allow us to control that particular piece of store
+
+- First we setup a cartSlice like this:
+```js
+import {createSlice} from "@reduxjs/toolkit";
+
+const initialState = {
+    cartItems: [],
+    amount:0,
+    total:0,
+    isLoading: true,
+}
+
+const cartSlice = createSlice({
+    name: "cart",
+    initialState,
+});
+
+console.log(cartSlice)
+export default cartSlice.reducer;
+
+```
+- Note, in the above we have initial state, and later on we will also have reducer functions
+- We then export those reducer functions
+
+## Next step is to import the reducer inside our main store
+```js
+import React from 'react'
+import { configureStore } from '@reduxjs/toolkit';
+import cartReducer from './features/cart/cartSlice.jsx';
+
+const store = configureStore({
+    reducer: {
+        cart: cartReducer,
+    }
+})
+export default store
+
+
+```
+
+- Next step is to access the state from any component.
+- For this purpose we have **useSelector** hook
+- Here we get access to the entire state
+- Usage is as follows
+```js
+import React from 'react'
+import {useSelector} from "react-redux";
+
+const Navbar = () => {
+    const state1 = useSelector(state => state.cart);
+    console.log(state1)
+
+    return (
+        <div>Navbar</div>
+    )
+}
+export default Navbar
+
+```
+- Above we will get access to the state in cartSlice from the Navbar component
+
+### (Side Note) We can use Hero Icons which return JSX and are very useful
+- Link is here: https://heroicons.com/
+- We can just make a component icons.jsx and just create our own icons by just copying pasting the jsx from the above link
+- For example
+
+```js
+export const TestingIcon = () => {
+  return (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"
+           className="size-6">
+        <path strokeLinecap="round" strokeLinejoin="round"
+              d="M6 13.5V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m12-3V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 9.75V10.5"/>
+      </svg>
+
+  )
+}
+```
+# Reducers in Redux Toolkit
+- Reducers in Redux are pure functions that specify how the application's state changes in response to actions. 
+- They take the current state and an action as arguments and return a new state. 
+- They never mutate the state directly but return a new state object.
+- They respond to actions dispatched by the store and determine how the state should be updated.
+- In the below code, we have the clearCart action inside the reducer and we export it
+- To call these action methods from within the component, we use the **useDispatch** hook
+- Redux toolkit also installs the immer library.
+- The Immer library is used in Redux Toolkit to simplify writing immutable update logic
+- It allows you to write code that looks like it's directly mutating the state, but under the hood, Immer produces a new state object with the changes applied, ensuring immutability
+
+```js
+const cartSlice = createSlice({
+    name: "cart",
+    initialState,
+    reducers: {
+        clearCart: (state) => {
+            //looks like it is mutating the state but in reality it creates a new state object
+            state.cartItems = [];
+        },
+        removeItem: (state, action) => {
+        const itemId = action.payload;
+        state.cartItems = state.cartItems.filter((item) => item.id !== itemId);
+    },
+    }
+});
+
+export const {clearCart} = cartSlice.actions;
+
+//Usage 
+import {useDispatch, useSelector} from "react-redux";
+const dispatch = useDispatch();
+<button onClick={()=>{dispatch(clearCart())}} className='btn clear-btn'>clear cart</button>
+```
+- In Reducer action method we can access the payload also(Whatever is passed as argument to the function)
+
+```js
+removeItem: (state, action) => {
+      const itemId = action.payload;
+      state.cartItems = state.cartItems.filter((item) => item.id !== itemId);
+    },
+    increase: (state, { payload }) => {
+      const cartItem = state.cartItems.find((item) => item.id === payload.id);
+      cartItem.amount = cartItem.amount + 1;
+    },
+    decrease: (state, { payload }) => {
+      const cartItem = state.cartItems.find((item) => item.id === payload.id);
+      cartItem.amount = cartItem.amount - 1;
+    },
+```
+
+## What if we have 2 different slices
+- Consider the example where we have a list of cart Items and we want to display a confirmation modal(popup) when the user clicks on Clear Cart function
+- First create a slice for modalSlice like this:
+```js
+import {createSlice} from "@reduxjs/toolkit";
+import modal from "../../components/Modal.jsx";
+
+const initialState = {
+    isOpen: false,
+}
+
+const modalSlice = createSlice({
+    name: "modal",
+    initialState,
+    reducers: {
+        openModal: (state,action) => {
+            state.isOpen = true;
+        },
+        closeModal: (state, action) => {
+            state.isOpen = false;
+        }
+    }
+});
+
+export const {openModal,closeModal} = modalSlice.actions;
+//console.log(modalSlice)
+export default modalSlice.reducer;
+
+```
+
+- Now in App.jsx we check the current state of the modal and display it accordingly
+
+```js
+import Navbar from "./components/Navbar.jsx";
+import CartContainer from "./components/CartContainer.jsx";
+import {useDispatch, useSelector} from "react-redux";
+import {useEffect} from "react";
+import {calculateTotals, clearCart} from "./features/cart/cartSlice.jsx";
+import Modal from "./components/Modal.jsx";
+
+function App() {
+  const dispatch = useDispatch();
+  const {isOpen} = useSelector((state) => state.modal);
+  const {cartItems} = useSelector((state) => state.cart);
+  useEffect(() => {
+    dispatch(calculateTotals());
+  },[cartItems]);
+  return <main>
+    {isOpen && <Modal />}
+    <Navbar/>
+    <CartContainer/>
+  </main>;
+}
+export default App;
+
+```
+- Now in cart container we open the modal when we click on clear cart like this
+```js
+  <button onClick={()=>{dispatch(openModal())}} className='btn clear-btn'>clear cart</button>
+```
+
+- Now from the Modal.jsx when we click on confirm button, we dispatch an action to clear the cart and also close the modal
+```js
+import React from 'react'
+import {useDispatch} from "react-redux";
+import {clearCart, increase, removeItem} from "../features/cart/cartSlice.jsx";
+import {closeModal} from "../features/cart/modalSlice.jsx";
+
+const Modal = () => {
+    const dispatch = useDispatch();
+    return (
+        <aside className='modal-container'>
+            <div className='modal'>
+                <h4>Remove all items from your shopping cart?</h4>
+                <div className='btn-container'>
+                    <button onClick={()=>{
+                        dispatch(clearCart());
+                        dispatch(closeModal());
+                    }} type='button' className='btn confirm-btn'>
+                        confirm
+                    </button>
+                    <button onClick={()=>{
+                        dispatch(closeModal());
+                    }} type='button' className='btn clear-btn'>
+                        cancel
+                    </button>
+                </div>
+            </div>
+        </aside>
+    )
+}
+export default Modal
+
+```
+
+# Async Thunk
+- An async thunk in Redux Toolkit is a function that handles asynchronous logic, like API calls, while dispatching actions to the Redux store. 
+- It helps keep the asynchronous logic separate from the components and makes the state management more straightforward and predictable.
+
+## Key Features
+- Simplifies Async Logic: Handles async operations like fetching data from an API.
+- Action Dispatching: Dispatches pending, fulfilled, and rejected actions automatically.
+- Error Handling: Integrates error handling by dispatching error actions when an operation fails.
+
+```js
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
+
+// Define an async thunk
+export const fetchUsers = createAsyncThunk('users/fetchUsers', async () => {
+  const response = await axios.get('/api/users');
+  return response.data;
+});
+
+const usersSlice = createSlice({
+  name: 'users',
+  initialState: {
+    users: [],
+    status: 'idle',
+    error: null
+  },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchUsers.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchUsers.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.users = action.payload;
+      })
+      .addCase(fetchUsers.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message;
+      });
+  }
+});
+
+export default usersSlice.reducer;
+
+```
+
+- Above, createAsyncThunk defines the fetchUsers thunk that fetches user data from an API.
+- usersSlice manages the state, including handling different states of the async operation (loading, succeeded, and failed).
+- extraReducers handle actions dispatched by the async thunk.
+
+### How to call async Thunk
+```js
+//Changes in App.jsx to call the async thunk middleware in the cart slice
+
+import {calculateTotals,getCartItems} from "./features/cart/cartSlice.jsx";
+const {cartItems,isLoading} = useSelector((state) => state.cart);
+useEffect(() => {
+    dispatch(getCartItems())
+}, []);
+
+if(isLoading) {
+    return (
+        <div className='loading'>
+            <h1>Loading...</h1>
+        </div>
+    );
+}
+
+
+//Changes in cartSlice.jsx
+
+const initialState = {
+    cartItems: [],
+    amount:cartItems.length,
+    total:0,
+    isLoading: true,
+}
+export const getCartItems = createAsyncThunk('cart/getCartItems', () => {
+    return fetch(url)
+        .then((resp) => resp.json())
+        .catch((err) => console.log(err));
+});
+
+extraReducers: (builder) => {
+    builder
+        .addCase(getCartItems.pending, (state) => {
+            state.isLoading = true;
+        })
+        .addCase(getCartItems.fulfilled, (state, action) => {
+            console.log(action)
+            state.isLoading = false;
+            state.cartItems = action.payload;
+        })
+        .addCase(getCartItems.rejected, (state, action) => {
+            state.isLoading = false;
+        });
+}
+
+
+```
+- We can use thunkAPI to get even more features inside our createAsyncThunk middleware
+- We can get the state and even provide a message if something goes wrong while running the thunk method
+- Also using thunk API we can even access methods from other reducers in other slices(look at thunkApi. dispatch(openModal()))
+```js
+export const getCartItems = createAsyncThunk(
+  'cart/getCartItems',
+  async (name, thunkAPI) => {
+    try {
+      // console.log(name);
+      // console.log(thunkAPI);
+      // console.log(thunkAPI.getState());
+      // thunkAPI.dispatch(openModal());
+      const resp = await axios(url);
+
+      return resp.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue('something went wrong');
+    }
+  }
+);
+```
